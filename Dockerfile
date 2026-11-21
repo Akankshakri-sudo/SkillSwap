@@ -1,32 +1,31 @@
 # ============================================================
-# Stage 1: Build the application with Maven
+# Stage 1: Build executable JAR using official Maven + JDK 21 image
 # ============================================================
-FROM eclipse-temurin:21-jdk-jammy AS build
+FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /app
 
-# Copy Maven wrapper & pom.xml first to leverage Docker layer caching
+# Copy pom.xml and source code
 COPY pom.xml .
 COPY src ./src
 
-# Build the executable JAR without running tests (tests already passed)
-RUN apt-get update && apt-get install -y maven && mvn clean package -DskipTests
+# Build production JAR (skipping tests since they run during CI/local)
+RUN mvn clean package -DskipTests
 
 # ============================================================
-# Stage 2: Minimal Production Runtime
+# Stage 2: Minimal Production JRE Runtime
 # ============================================================
 FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 
-# Add a non-root system user for security
+# Run as non-root user
 RUN groupadd -r spring && useradd -r -g spring spring
 USER spring:spring
 
-# Copy built JAR from builder stage
+# Copy built JAR from Stage 1
 COPY --from=build /app/target/skillswap-1.0.0.jar app.jar
 
-# Cloud providers inject the PORT environment variable
+# Cloud providers inject $PORT dynamically
 ENV PORT=8080
 EXPOSE 8080
 
-# Run Spring Boot app
 ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/./urandom", "-jar", "app.jar"]
