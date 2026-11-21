@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Active Sessions – SkillSwap</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="/css/styles.css" rel="stylesheet">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="ss-navbar navbar navbar-expand-lg">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand" href="/index.html"><i class="fa-solid fa-rotate me-1"></i>SkillSwap</a>
+        <div class="d-flex align-items-center gap-3 ms-auto">
+            <a href="/dashboard.html" class="nav-link"><i class="fas fa-home me-1"></i>Dashboard</a>
+            <a href="/discover.html" class="nav-link"><i class="fas fa-search me-1"></i>Discover</a>
+            <a href="/requests.html" class="nav-link"><i class="fas fa-envelope me-1"></i>Requests</a>
+            <a href="/profile.html" class="nav-link"><i class="fas fa-user me-1"></i>Profile</a>
+            <button class="btn-danger-ss" onclick="logout()" style="font-size:0.82rem;padding:0.35rem 0.9rem;">
+                <i class="fas fa-sign-out-alt me-1"></i>Logout
+            </button>
+        </div>
+    </div>
+</nav>
+
+<div class="container py-4" style="max-width:960px;">
+    <!-- Title -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h4 style="font-weight:800;color:#1e1b4b;margin-bottom:0.25rem;">🤝 Learning Sessions</h4>
+            <p class="text-muted mb-0">Track ongoing skill exchanges and mentoring partnerships. Mark sessions as completed once your goals are achieved.</p>
+        </div>
+        <a href="/discover.html" class="btn-primary-ss">
+            <i class="fas fa-plus"></i> Find More Peers
+        </a>
+    </div>
+
+    <!-- Filter Buttons -->
+    <div class="d-flex gap-2 mb-4">
+        <button class="btn btn-sm btn-outline-primary active" id="filterAll" onclick="filterSessions('ALL')">All Active</button>
+        <button class="btn btn-sm btn-outline-primary" id="filterExchange" onclick="filterSessions('EXCHANGE')">Skill Exchanges</button>
+        <button class="btn btn-sm btn-outline-primary" id="filterMentoring" onclick="filterSessions('FREE_MENTORING')">Free Mentoring</button>
+    </div>
+
+    <!-- Active Sessions List -->
+    <div id="sessionsList">
+        <div class="text-center py-5">
+            <div class="loading-spinner mx-auto mb-3"></div>
+            <p class="text-muted">Loading your learning sessions...</p>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/api.js"></script>
+<script>
+let currentUser = null;
+let allSessions = [];
+let currentFilter = 'ALL';
+
+async function init() {
+    currentUser = await requireAuth();
+    if (!currentUser) return;
+
+    await loadSessions();
+}
+
+async function loadSessions() {
+    const container = document.getElementById('sessionsList');
+    try {
+        allSessions = await api.get('/api/requests/active');
+        renderSessions();
+    } catch (err) {
+        container.innerHTML = `<div class="alert alert-danger">${err.message || 'Error loading active sessions'}</div>`;
+    }
+}
+
+function filterSessions(filterType) {
+    currentFilter = filterType;
+    document.querySelectorAll('.d-flex.gap-2.mb-4 button').forEach(b => b.classList.remove('active'));
+    if (filterType === 'ALL') document.getElementById('filterAll').classList.add('active');
+    if (filterType === 'EXCHANGE') document.getElementById('filterExchange').classList.add('active');
+    if (filterType === 'FREE_MENTORING') document.getElementById('filterMentoring').classList.add('active');
+    renderSessions();
+}
+
+function renderSessions() {
+    const container = document.getElementById('sessionsList');
+    let filtered = allSessions;
+    if (currentFilter !== 'ALL') {
+        filtered = allSessions.filter(s => s.requestType === currentFilter);
+    }
+
+    if (filtered.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state ss-card">
+                <div class="empty-icon">🤝</div>
+                <h4>No active sessions</h4>
+                <p class="text-muted">You don't have any ongoing exchanges or mentoring sessions in this view.</p>
+                <div class="d-flex justify-content-center gap-2 mt-3">
+                    <a href="/discover.html" class="btn-primary-ss">Browse Students</a>
+                    <a href="/requests.html" class="btn-secondary-ss">Check Pending Requests</a>
+                </div>
+            </div>`;
+        return;
+    }
+
+    container.innerHTML = filtered.map(s => renderSessionCard(s)).join('');
+}
+
+function renderSessionCard(session) {
+    const isRequester = session.requester.id === currentUser.id;
+    const peer = isRequester ? session.receiver : session.requester;
+    const initials = peer.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+
+    // Determine what each person teaches
+    let myRoleDesc = '';
+    let peerRoleDesc = '';
+
+    if (session.requestType === 'EXCHANGE') {
+        if (isRequester) {
+            myRoleDesc = `You teach: <strong>${session.skillToTeach?.name}</strong>`;
+            peerRoleDesc = `${peer.name} teaches: <strong>${session.skillToLearn.name}</strong>`;
+        } else {
+            myRoleDesc = `You teach: <strong>${session.skillToLearn.name}</strong>`;
+            peerRoleDesc = `${peer.name} teaches: <strong>${session.skillToTeach?.name}</strong>`;
+        }
+    } else { // FREE_MENTORING
+        if (isRequester) {
+            peerRoleDesc = `${peer.name} is mentoring you in: <strong>${session.skillToLearn.name}</strong>`;
+            myRoleDesc = `Free Mentee Session`;
+        } else {
+            myRoleDesc = `You are mentoring ${peer.name} in: <strong>${session.skillToLearn.name}</strong>`;
+            peerRoleDesc = `Volunteer Mentorship`;
+        }
+    }
+
+    return `
+    <div class="ss-card mb-4 border-start border-4 ${session.requestType === 'EXCHANGE' ? 'border-primary' : 'border-purple'}">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+            <div class="d-flex align-items-center gap-2">
+                ${getRequestTypeBadge(session.requestType)}
+                <span class="badge bg-success"><i class="fas fa-play-circle me-1"></i>Active</span>
+            </div>
+            <span class="text-muted small">Started ${formatDate(session.updatedAt || session.createdAt)}</span>
+        </div>
+
+        <div class="row align-items-center g-3">
+            <!-- Peer Info -->
+            <div class="col-md-5">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="student-avatar" style="width:54px;height:54px;font-size:1.3rem;flex-shrink:0;">
+                        ${peer.profileImageUrl
+                            ? `<img src="${peer.profileImageUrl}" style="width:54px;height:54px;border-radius:50%;object-fit:cover;">`
+                            : initials}
+                    </div>
+                    <div>
+                        <div class="text-muted small">Learning Partner</div>
+                        <a href="/student.html?id=${peer.id}" class="fw-700 text-dark text-decoration-none fs-5">
+                            ${peer.name}
+                        </a>
+                        <div class="text-muted small">${peer.college || 'Student'}</div>
+                        <div class="text-muted small"><i class="fas fa-envelope me-1"></i>${peer.email}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Exchange Details -->
+            <div class="col-md-4">
+                <div class="p-3 bg-light rounded-3">
+                    <div class="text-muted small fw-600 mb-1">Session Exchange Plan:</div>
+                    <div class="small mb-1">${myRoleDesc}</div>
+                    <div class="small">${peerRoleDesc}</div>
+                </div>
+            </div>
+
+            <!-- Complete Action -->
+            <div class="col-md-3 text-md-end">
+                <button class="btn-success-ss w-100 justify-content-center py-2" onclick="completeSession(${session.id})">
+                    <i class="fas fa-check-circle me-1"></i> Mark Completed
+                </button>
+                <div class="text-muted" style="font-size:0.75rem;margin-top:6px;">
+                    Either partner can mark done
+                </div>
+            </div>
+        </div>
+
+        ${session.message ? `
+        <div class="mt-3 pt-3 border-top text-muted small fst-italic">
+            <i class="fas fa-comment-dots me-1 text-primary"></i> Original note: "${session.message}"
+        </div>` : ''}
+    </div>`;
+}
+
+async function completeSession(sessionId) {
+    if (!confirm('Are you sure you want to mark this learning session as completed?')) return;
+    try {
+        await api.patch(`/api/requests/${sessionId}/complete`);
+        showToast('Congratulations on completing your session! 🎓', 'success');
+        await loadSessions();
+    } catch (err) {
+        showToast(err.message || 'Failed to complete session', 'error');
+    }
+}
+
+init();
+</script>
+</body>
+</html>

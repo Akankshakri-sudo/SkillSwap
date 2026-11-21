@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkillSwap – Student Skill Exchange Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="/css/styles.css" rel="stylesheet">
+    <style>
+        /* Landing-page specific styles */
+        .how-step {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            box-shadow: 0 4px 24px rgba(79,70,229,0.08);
+            border: 1px solid #e5e7eb;
+            height: 100%;
+            transition: transform 0.25s;
+        }
+        .how-step:hover { transform: translateY(-6px); }
+        .step-number {
+            width: 48px; height: 48px;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            border-radius: 50%;
+            font-weight: 800; font-size: 1.1rem;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 1rem;
+        }
+        .feature-icon {
+            width: 64px; height: 64px;
+            border-radius: 16px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.75rem;
+            margin-bottom: 1rem;
+        }
+        .feature-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            height: 100%;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 4px 24px rgba(79,70,229,0.06);
+            transition: transform 0.25s, box-shadow 0.25s;
+        }
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(79,70,229,0.14);
+        }
+        .skill-cloud span {
+            display: inline-block;
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border-radius: 20px;
+            padding: 6px 16px;
+            margin: 4px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .stats-bar {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 24px rgba(79,70,229,0.08);
+        }
+        .stat-item { text-align: center; }
+        .stat-item .number {
+            font-size: 2.2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .stat-item .label { color: #6b7280; font-size: 0.9rem; }
+        footer { background: #1e1b4b; color: rgba(255,255,255,0.75); }
+    </style>
+</head>
+<body>
+
+<!-- ============ NAVBAR ============ -->
+<nav class="ss-navbar navbar navbar-expand-lg">
+    <div class="container">
+        <a class="navbar-brand" href="/index.html">
+            <i class="fa-solid fa-rotate" style="margin-right:6px;"></i>SkillSwap
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navMenu">
+            <ul class="navbar-nav ms-auto align-items-center gap-1">
+                <li class="nav-item"><a class="nav-link" href="#how-it-works">How It Works</a></li>
+                <li class="nav-item"><a class="nav-link" href="#features">Features</a></li>
+                <li class="nav-item" id="navLoggedIn" style="display:none;">
+                    <a class="nav-link" href="/dashboard.html">Dashboard</a>
+                </li>
+                <li class="nav-item" id="navLogin">
+                    <a class="nav-link" href="/login.html">Login</a>
+                </li>
+                <li class="nav-item" id="navRegister">
+                    <a href="/register.html" class="btn-primary-ss ms-2">Get Started Free</a>
+                </li>
+                <li class="nav-item" id="navLogout" style="display:none;">
+                    <button class="btn-secondary-ss ms-2" onclick="logout()">Logout</button>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- ============ HERO ============ -->
+<section class="hero-section">
+    <div class="container position-relative" style="z-index:1;">
+        <div class="row align-items-center">
+            <div class="col-lg-6 text-white">
+                <div class="mb-3">
+                    <span style="background:rgba(255,255,255,0.15);color:white;border-radius:20px;padding:6px 16px;font-size:0.85rem;font-weight:600;border:1px solid rgba(255,255,255,0.3);">
+                        🎓 Free for Students · No Credit Card Required
+                    </span>
+                </div>
+                <h1 style="font-size:clamp(2.2rem,5vw,3.5rem);font-weight:800;line-height:1.15;margin-bottom:1.25rem;">
+                    Exchange Skills.<br>Grow Together.<br>
+                    <span style="color:#a5b4fc;">Learn for Free.</span>
+                </h1>
+                <p style="font-size:1.15rem;opacity:0.88;margin-bottom:2rem;max-width:480px;">
+                    SkillSwap connects college students who want to learn from each other.
+                    Trade your Java skills for SQL, offer free Python mentoring, and
+                    build your portfolio while helping peers.
+                </p>
+                <div class="d-flex flex-wrap gap-3">
+                    <a href="/register.html" class="btn-primary-ss" style="font-size:1rem;padding:0.75rem 2rem;">
+                        <i class="fas fa-rocket"></i> Start Swapping Skills
+                    </a>
+                    <a href="#how-it-works" class="btn-secondary-ss" style="font-size:1rem;padding:0.75rem 2rem;background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.4);color:white;">
+                        <i class="fas fa-play-circle"></i> See How It Works
+                    </a>
+                </div>
+
+                <!-- Skill Cloud -->
+                <div class="skill-cloud mt-4">
+                    <span>Java</span><span>Python</span><span>SQL</span>
+                    <span>DSA</span><span>ML/AI</span><span>Web Dev</span>
+                    <span>UI/UX</span><span>JavaScript</span>
+                </div>
+            </div>
+            <div class="col-lg-6 d-none d-lg-block text-center">
+                <!-- Animated illustration placeholder -->
+                <div style="background:rgba(255,255,255,0.08);border-radius:24px;padding:2.5rem;border:1px solid rgba(255,255,255,0.15);">
+                    <div style="font-size:4rem;margin-bottom:1rem;">🎯</div>
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div style="background:rgba(255,255,255,0.12);border-radius:12px;padding:1rem;">
+                                <div style="font-size:1.5rem;">👩‍💻</div>
+                                <div style="color:white;font-weight:600;font-size:0.9rem;">Priya teaches Java</div>
+                                <div style="color:rgba(255,255,255,0.7);font-size:0.8rem;">Wants to learn SQL</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div style="background:rgba(255,255,255,0.12);border-radius:12px;padding:1rem;">
+                                <div style="font-size:1.5rem;">👨‍🎓</div>
+                                <div style="color:white;font-weight:600;font-size:0.9rem;">Rahul teaches SQL</div>
+                                <div style="color:rgba(255,255,255,0.7);font-size:0.8rem;">Wants to learn Java</div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div style="background:rgba(16,185,129,0.25);border-radius:12px;padding:1rem;border:1px solid rgba(16,185,129,0.4);">
+                                <div style="font-size:1.5rem;">✅</div>
+                                <div style="color:white;font-weight:700;">Perfect Match Found!</div>
+                                <div style="color:rgba(255,255,255,0.8);font-size:0.85rem;">They exchange skills & both grow 🚀</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ============ STATS ============ -->
+<section class="py-5 bg-white">
+    <div class="container">
+        <div class="stats-bar">
+            <div class="row g-4">
+                <div class="col-6 col-md-3 stat-item">
+                    <div class="number">500+</div>
+                    <div class="label">Students Connected</div>
+                </div>
+                <div class="col-6 col-md-3 stat-item">
+                    <div class="number">24+</div>
+                    <div class="label">Skills Available</div>
+                </div>
+                <div class="col-6 col-md-3 stat-item">
+                    <div class="number">200+</div>
+                    <div class="label">Exchanges Completed</div>
+                </div>
+                <div class="col-6 col-md-3 stat-item">
+                    <div class="number">100%</div>
+                    <div class="label">Free for Students</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ============ HOW IT WORKS ============ -->
+<section id="how-it-works" class="py-6" style="padding:5rem 0;background:#f8faff;">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 style="font-size:2.2rem;font-weight:800;color:#1e1b4b;">How SkillSwap Works</h2>
+            <p class="text-muted" style="max-width:500px;margin:0.75rem auto 0;">
+                Start learning from your peers in 4 simple steps.
+                No money needed — just your knowledge.
+            </p>
+        </div>
+        <div class="row g-4">
+            <div class="col-sm-6 col-lg-3">
+                <div class="how-step">
+                    <div class="step-number">1</div>
+                    <div style="font-size:2rem;margin-bottom:0.75rem;">📝</div>
+                    <h5 style="font-weight:700;">Create Profile</h5>
+                    <p class="text-muted small">Sign up and list the skills you can teach and the ones you want to learn.</p>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="how-step">
+                    <div class="step-number">2</div>
+                    <div style="font-size:2rem;margin-bottom:0.75rem;">🔍</div>
+                    <h5 style="font-weight:700;">Discover Students</h5>
+                    <p class="text-muted small">Search for students who have the skills you want, or who want what you offer.</p>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="how-step">
+                    <div class="step-number">3</div>
+                    <div style="font-size:2rem;margin-bottom:0.75rem;">🤝</div>
+                    <h5 style="font-weight:700;">Send a Request</h5>
+                    <p class="text-muted small">Send a skill exchange or free mentoring request with a personalized message.</p>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="how-step">
+                    <div class="step-number">4</div>
+                    <div style="font-size:2rem;margin-bottom:0.75rem;">🚀</div>
+                    <h5 style="font-weight:700;">Learn Together</h5>
+                    <p class="text-muted small">Once accepted, arrange sessions and grow your skills together at no cost!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ============ FEATURES ============ -->
+<section id="features" class="py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 style="font-size:2.2rem;font-weight:800;color:#1e1b4b;">Two Ways to Learn</h2>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="feature-card">
+                    <div class="feature-icon" style="background:rgba(79,70,229,0.1);">🔄</div>
+                    <h4 style="font-weight:800;color:#1e1b4b;">Skill Exchange</h4>
+                    <p class="text-muted">Trade skills with another student — you teach what you know, they teach what you need. No money, just knowledge.</p>
+                    <ul class="list-unstyled text-muted">
+                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Mutual learning</li>
+                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Both parties grow</li>
+                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Build real teaching experience</li>
+                    </ul>
+                    <a href="/register.html" class="btn-primary-ss">Start Exchanging →</a>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="feature-card">
+                    <div class="feature-icon" style="background:rgba(124,58,237,0.1);">🎯</div>
+                    <h4 style="font-weight:800;color:#1e1b4b;">Free Mentoring</h4>
+                    <p class="text-muted">Senior students volunteer to mentor juniors for free. No reciprocation needed — just the joy of teaching.</p>
+                    <ul class="list-unstyled text-muted">
+                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>No skill to offer needed</li>
+                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Completely free sessions</li>
+                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Build your mentor portfolio</li>
+                    </ul>
+                    <a href="/register.html" class="btn-secondary-ss">Find a Mentor →</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ============ SKILLS SECTION ============ -->
+<section class="py-5" style="background:#f8faff;">
+    <div class="container text-center">
+        <h3 style="font-weight:800;color:#1e1b4b;margin-bottom:1rem;">Skills You Can Exchange</h3>
+        <p class="text-muted mb-4">24+ skills and growing. Suggest a new one after joining!</p>
+        <div id="skillsCloud" class="d-flex flex-wrap justify-content-center gap-2">
+            <!-- Loaded via JS -->
+            <span class="skill-tag skill-tag-teach">Java</span>
+            <span class="skill-tag skill-tag-learn">Python</span>
+            <span class="skill-tag skill-tag-teach">SQL</span>
+            <span class="skill-tag skill-tag-learn">DSA</span>
+            <span class="skill-tag skill-tag-teach">Machine Learning</span>
+            <span class="skill-tag skill-tag-learn">JavaScript</span>
+            <span class="skill-tag skill-tag-teach">UI/UX Design</span>
+            <span class="skill-tag skill-tag-learn">Data Analytics</span>
+            <span class="skill-tag skill-tag-teach">React</span>
+            <span class="skill-tag skill-tag-learn">Spring Boot</span>
+            <span class="skill-tag skill-tag-teach">Git & GitHub</span>
+            <span class="skill-tag skill-tag-learn">Cyber Security</span>
+        </div>
+    </div>
+</section>
+
+<!-- ============ CTA ============ -->
+<section style="background:linear-gradient(135deg,#1e1b4b,#4f46e5,#7c3aed);padding:5rem 0;">
+    <div class="container text-center text-white">
+        <h2 style="font-size:2.5rem;font-weight:800;margin-bottom:1rem;">Ready to Start Learning?</h2>
+        <p style="font-size:1.1rem;opacity:0.88;margin-bottom:2rem;max-width:500px;margin-left:auto;margin-right:auto;">
+            Join thousands of students who are already exchanging skills and growing together.
+            It's completely free!
+        </p>
+        <div class="d-flex flex-wrap justify-content-center gap-3">
+            <a href="/register.html" class="btn-primary-ss" style="font-size:1rem;padding:0.8rem 2.5rem;background:white;color:#4f46e5;">
+                <i class="fas fa-user-plus"></i> Create Free Account
+            </a>
+            <a href="/login.html" class="btn-secondary-ss" style="font-size:1rem;padding:0.8rem 2.5rem;border-color:rgba(255,255,255,0.4);color:white;background:transparent;">
+                <i class="fas fa-sign-in-alt"></i> Sign In
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer style="background:#1e1b4b;color:rgba(255,255,255,0.75);padding:3rem 0 2rem;">
+    <div class="container">
+        <div class="row g-4 mb-4">
+            <div class="col-md-4">
+                <h5 style="color:white;font-weight:800;font-size:1.3rem;">
+                    <i class="fa-solid fa-rotate me-2"></i>SkillSwap
+                </h5>
+                <p class="small">Student-to-student skill exchange and free mentoring platform. Learn. Teach. Grow.</p>
+            </div>
+            <div class="col-md-4">
+                <h6 style="color:white;font-weight:700;">Quick Links</h6>
+                <ul class="list-unstyled small">
+                    <li><a href="/register.html" style="color:rgba(255,255,255,0.75);">Register</a></li>
+                    <li><a href="/login.html" style="color:rgba(255,255,255,0.75);">Login</a></li>
+                    <li><a href="#how-it-works" style="color:rgba(255,255,255,0.75);">How It Works</a></li>
+                </ul>
+            </div>
+            <div class="col-md-4">
+                <h6 style="color:white;font-weight:700;">Built With</h6>
+                <p class="small">Java 21 · Spring Boot 3 · MySQL · Bootstrap 5</p>
+                <p class="small">A campus placement project 🎓</p>
+            </div>
+        </div>
+        <hr style="border-color:rgba(255,255,255,0.1);">
+        <p class="text-center small mb-0">© 2024 SkillSwap. Made with ❤️ for students, by students.</p>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/api.js"></script>
+<script>
+    // Check if user is already logged in and update nav
+    (async () => {
+        const user = await getCurrentUser();
+        if (user) {
+            document.getElementById('navLoggedIn').style.display = '';
+            document.getElementById('navLogin').style.display = 'none';
+            document.getElementById('navRegister').style.display = 'none';
+            document.getElementById('navLogout').style.display = '';
+        }
+    })();
+</script>
+</body>
+</html>

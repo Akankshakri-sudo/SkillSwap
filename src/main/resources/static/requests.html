@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Requests – SkillSwap</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="/css/styles.css" rel="stylesheet">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="ss-navbar navbar navbar-expand-lg">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand" href="/index.html"><i class="fa-solid fa-rotate me-1"></i>SkillSwap</a>
+        <div class="d-flex align-items-center gap-3 ms-auto">
+            <a href="/dashboard.html" class="nav-link"><i class="fas fa-home me-1"></i>Dashboard</a>
+            <a href="/discover.html" class="nav-link"><i class="fas fa-search me-1"></i>Discover</a>
+            <a href="/sessions.html" class="nav-link"><i class="fas fa-handshake me-1"></i>Sessions</a>
+            <a href="/profile.html" class="nav-link"><i class="fas fa-user me-1"></i>Profile</a>
+            <button class="btn-danger-ss" onclick="logout()" style="font-size:0.82rem;padding:0.35rem 0.9rem;">
+                <i class="fas fa-sign-out-alt me-1"></i>Logout
+            </button>
+        </div>
+    </div>
+</nav>
+
+<div class="container py-4" style="max-width:960px;">
+    <!-- Title -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h4 style="font-weight:800;color:#1e1b4b;margin-bottom:0.25rem;">📬 Learning Requests</h4>
+            <p class="text-muted mb-0">Manage incoming requests from other students and track your sent invitations.</p>
+        </div>
+        <a href="/discover.html" class="btn-primary-ss">
+            <i class="fas fa-plus"></i> Find Students
+        </a>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-pills mb-4 gap-2" id="requestsTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active px-4 py-2 fw-600 rounded-pill" id="received-tab" data-bs-toggle="pill" data-bs-target="#received" type="button" role="tab">
+                <i class="fas fa-inbox me-2"></i>Incoming Requests <span class="badge bg-danger ms-1 d-none" id="receivedCountBadge">0</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link px-4 py-2 fw-600 rounded-pill" id="sent-tab" data-bs-toggle="pill" data-bs-target="#sent" type="button" role="tab">
+                <i class="fas fa-paper-plane me-2"></i>Sent Requests <span class="badge bg-secondary ms-1" id="sentCountBadge">0</span>
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="requestsTabContent">
+        <!-- RECEIVED TAB -->
+        <div class="tab-pane fade show active" id="received" role="tabpanel">
+            <div id="receivedList">
+                <div class="text-center py-5">
+                    <div class="loading-spinner mx-auto mb-3"></div>
+                    <p class="text-muted">Loading received requests...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SENT TAB -->
+        <div class="tab-pane fade" id="sent" role="tabpanel">
+            <div id="sentList">
+                <div class="text-center py-5">
+                    <div class="loading-spinner mx-auto mb-3"></div>
+                    <p class="text-muted">Loading sent requests...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/api.js"></script>
+<script>
+let currentUser = null;
+
+async function init() {
+    currentUser = await requireAuth();
+    if (!currentUser) return;
+
+    await Promise.all([loadReceivedRequests(), loadSentRequests()]);
+}
+
+async function loadReceivedRequests() {
+    const container = document.getElementById('receivedList');
+    try {
+        const requests = await api.get('/api/requests/received');
+        const badge = document.getElementById('receivedCountBadge');
+        const pendingCount = requests.filter(r => r.status === 'PENDING').length;
+
+        if (pendingCount > 0) {
+            badge.textContent = pendingCount;
+            badge.classList.remove('d-none');
+        } else {
+            badge.classList.add('d-none');
+        }
+
+        if (requests.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state ss-card">
+                    <div class="empty-icon">📭</div>
+                    <h4>No requests received yet</h4>
+                    <p>When other students find your profile in Discover and want to learn with you, their requests will appear here.</p>
+                </div>`;
+            return;
+        }
+
+        container.innerHTML = requests.map(r => renderReceivedCard(r)).join('');
+    } catch (err) {
+        container.innerHTML = `<div class="alert alert-danger">${err.message || 'Error loading requests'}</div>`;
+    }
+}
+
+function renderReceivedCard(r) {
+    const isPending = r.status === 'PENDING';
+    const isAccepted = r.status === 'ACCEPTED';
+    const initials = r.requester.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+
+    return `
+    <div class="ss-card mb-3 request-card type-${r.requestType.toLowerCase().replace('_', '-')} status-${r.status.toLowerCase()}">
+        <div class="d-flex align-items-start gap-3 flex-grow-1">
+            <div class="student-avatar" style="width:48px;height:48px;font-size:1.1rem;flex-shrink:0;">
+                ${r.requester.profileImageUrl
+                    ? `<img src="${r.requester.profileImageUrl}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;">`
+                    : initials}
+            </div>
+            <div class="flex-grow-1">
+                <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                    <a href="/student.html?id=${r.requester.id}" class="fw-700 text-dark text-decoration-none">
+                        ${r.requester.name}
+                    </a>
+                    <span class="text-muted small">${r.requester.college ? `(${r.requester.college})` : ''}</span>
+                    ${getRequestTypeBadge(r.requestType)}
+                    ${getStatusBadge(r.status)}
+                </div>
+
+                <div class="text-secondary small mt-1">
+                    <div>
+                        <i class="fas fa-book-reader text-primary me-1"></i>
+                        Wants to learn from you: <strong>${r.skillToLearn.name}</strong>
+                    </div>
+                    ${r.skillToTeach ? `
+                    <div class="mt-1">
+                        <i class="fas fa-chalkboard-teacher text-success me-1"></i>
+                        Offers to teach you in exchange: <strong>${r.skillToTeach.name}</strong>
+                    </div>` : ''}
+                </div>
+
+                ${r.message ? `
+                <div class="p-2 mt-2 rounded bg-light border text-muted small fst-italic">
+                    "${r.message}"
+                </div>` : ''}
+
+                <div class="text-muted" style="font-size:0.75rem;margin-top:6px;">
+                    Requested on ${formatDate(r.createdAt)}
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex flex-column gap-2 mt-3 mt-md-0 flex-shrink-0 align-items-end">
+            ${isPending ? `
+                <div class="d-flex gap-2">
+                    <button class="btn-success-ss" onclick="handleAction(${r.id}, 'accept')">
+                        <i class="fas fa-check"></i> Accept
+                    </button>
+                    <button class="btn-danger-ss" onclick="handleAction(${r.id}, 'reject')">
+                        <i class="fas fa-times"></i> Reject
+                    </button>
+                </div>
+            ` : ''}
+            ${isAccepted ? `
+                <a href="/sessions.html" class="btn-primary-ss" style="font-size:0.85rem;padding:0.4rem 1rem;">
+                    <i class="fas fa-handshake"></i> Go to Sessions
+                </a>
+            ` : ''}
+        </div>
+    </div>`;
+}
+
+async function loadSentRequests() {
+    const container = document.getElementById('sentList');
+    try {
+        const requests = await api.get('/api/requests/sent');
+        document.getElementById('sentCountBadge').textContent = requests.length;
+
+        if (requests.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state ss-card">
+                    <div class="empty-icon">📤</div>
+                    <h4>No sent requests</h4>
+                    <p>You haven't sent any skill exchange or mentoring requests yet. Head over to Discover to connect with students!</p>
+                    <a href="/discover.html" class="btn-primary-ss">Browse Students</a>
+                </div>`;
+            return;
+        }
+
+        container.innerHTML = requests.map(r => renderSentCard(r)).join('');
+    } catch (err) {
+        container.innerHTML = `<div class="alert alert-danger">${err.message || 'Error loading sent requests'}</div>`;
+    }
+}
+
+function renderSentCard(r) {
+    const initials = r.receiver.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    return `
+    <div class="ss-card mb-3 request-card type-${r.requestType.toLowerCase().replace('_', '-')} status-${r.status.toLowerCase()}">
+        <div class="d-flex align-items-start gap-3 flex-grow-1">
+            <div class="student-avatar" style="width:48px;height:48px;font-size:1.1rem;flex-shrink:0;">
+                ${r.receiver.profileImageUrl
+                    ? `<img src="${r.receiver.profileImageUrl}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;">`
+                    : initials}
+            </div>
+            <div class="flex-grow-1">
+                <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                    <span class="text-muted small">To:</span>
+                    <a href="/student.html?id=${r.receiver.id}" class="fw-700 text-dark text-decoration-none">
+                        ${r.receiver.name}
+                    </a>
+                    <span class="text-muted small">${r.receiver.college ? `(${r.receiver.college})` : ''}</span>
+                    ${getRequestTypeBadge(r.requestType)}
+                    ${getStatusBadge(r.status)}
+                </div>
+
+                <div class="text-secondary small mt-1">
+                    <div>
+                        <i class="fas fa-graduation-cap text-primary me-1"></i>
+                        Skill you want to learn: <strong>${r.skillToLearn.name}</strong>
+                    </div>
+                    ${r.skillToTeach ? `
+                    <div class="mt-1">
+                        <i class="fas fa-chalkboard-teacher text-success me-1"></i>
+                        Skill you offered to teach: <strong>${r.skillToTeach.name}</strong>
+                    </div>` : ''}
+                </div>
+
+                ${r.message ? `
+                <div class="p-2 mt-2 rounded bg-light border text-muted small fst-italic">
+                    "${r.message}"
+                </div>` : ''}
+
+                <div class="text-muted" style="font-size:0.75rem;margin-top:6px;">
+                    Sent on ${formatDate(r.createdAt)}
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex flex-column gap-2 mt-3 mt-md-0 flex-shrink-0 align-items-end">
+            ${r.status === 'ACCEPTED' ? `
+                <a href="/sessions.html" class="btn-primary-ss" style="font-size:0.85rem;padding:0.4rem 1rem;">
+                    <i class="fas fa-handshake"></i> Open Session
+                </a>
+            ` : ''}
+        </div>
+    </div>`;
+}
+
+async function handleAction(requestId, action) {
+    try {
+        await api.patch(`/api/requests/${requestId}/${action}`);
+        showToast(`Request ${action}ed successfully!`, action === 'accept' ? 'success' : 'info');
+        await Promise.all([loadReceivedRequests(), loadSentRequests()]);
+    } catch (err) {
+        showToast(err.message || `Failed to ${action} request`, 'error');
+    }
+}
+
+init();
+</script>
+</body>
+</html>

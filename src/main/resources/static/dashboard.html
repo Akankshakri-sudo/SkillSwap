@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard – SkillSwap</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="/css/styles.css" rel="stylesheet">
+</head>
+<body>
+
+<!-- ============ NAVBAR ============ -->
+<nav class="ss-navbar navbar navbar-expand-lg">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand" href="/index.html"><i class="fa-solid fa-rotate me-1"></i>SkillSwap</a>
+        <div class="d-flex align-items-center gap-3 ms-auto">
+            <span class="text-muted small d-none d-md-block" id="welcomeMsg"></span>
+            <a href="/discover.html" class="nav-link"><i class="fas fa-search me-1"></i>Discover</a>
+            <a href="/profile.html" class="nav-link"><i class="fas fa-user me-1"></i>Profile</a>
+            <button class="btn-danger-ss" onclick="logout()" style="font-size:0.82rem;padding:0.35rem 0.9rem;">
+                <i class="fas fa-sign-out-alt me-1"></i>Logout
+            </button>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid px-0">
+    <div class="row g-0">
+
+        <!-- ---- SIDEBAR ---- -->
+        <div class="col-lg-2 col-md-3 ss-sidebar d-none d-md-block">
+            <nav class="nav flex-column">
+                <div class="nav-item">
+                    <a href="/dashboard.html" class="active">
+                        <i class="fas fa-tachometer-alt fa-fw"></i> Dashboard
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/profile.html">
+                        <i class="fas fa-user fa-fw"></i> My Profile
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/discover.html">
+                        <i class="fas fa-search fa-fw"></i> Discover
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/requests.html">
+                        <i class="fas fa-envelope fa-fw"></i> Requests
+                        <span id="pendingBadge" class="badge bg-danger ms-auto d-none"></span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/sessions.html">
+                        <i class="fas fa-handshake fa-fw"></i> Sessions
+                    </a>
+                </div>
+            </nav>
+        </div>
+
+        <!-- ---- MAIN CONTENT ---- -->
+        <div class="col-lg-10 col-md-9 p-4">
+
+            <!-- Welcome banner -->
+            <div class="mb-4">
+                <h4 style="font-weight:800;color:#1e1b4b;" id="pageTitle">👋 Welcome back!</h4>
+                <p class="text-muted mb-0">Here's what's happening with your skill exchanges today.</p>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="row g-3 mb-4" id="statsContainer">
+                <!-- Loaded via JS -->
+                <div class="col-12 text-center py-4">
+                    <div class="loading-spinner mx-auto"></div>
+                </div>
+            </div>
+
+            <!-- Two Column Layout -->
+            <div class="row g-4">
+
+                <!-- Incoming Requests -->
+                <div class="col-lg-6">
+                    <div class="ss-card">
+                        <div class="section-title">
+                            <i class="fas fa-inbox text-primary"></i> Incoming Requests
+                        </div>
+                        <div id="incomingRequests">
+                            <div class="text-center py-3"><div class="loading-spinner mx-auto"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sent Requests -->
+                <div class="col-lg-6">
+                    <div class="ss-card">
+                        <div class="section-title">
+                            <i class="fas fa-paper-plane text-primary"></i> Sent Requests
+                        </div>
+                        <div id="sentRequests">
+                            <div class="text-center py-3"><div class="loading-spinner mx-auto"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active Sessions -->
+                <div class="col-12">
+                    <div class="ss-card">
+                        <div class="section-title">
+                            <i class="fas fa-handshake text-success"></i> Active Exchanges & Sessions
+                        </div>
+                        <div id="activeSessions">
+                            <div class="text-center py-3"><div class="loading-spinner mx-auto"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/api.js"></script>
+<script>
+let currentUser = null;
+
+async function init() {
+    currentUser = await requireAuth();
+    if (!currentUser) return;
+
+    document.getElementById('welcomeMsg').textContent = `Hello, ${currentUser.name}`;
+    document.getElementById('pageTitle').textContent = `👋 Welcome back, ${currentUser.name.split(' ')[0]}!`;
+
+    await Promise.all([loadStats(), loadIncoming(), loadSent(), loadActive()]);
+}
+
+async function loadStats() {
+    try {
+        const stats = await api.get('/api/users/me/dashboard');
+        const statsData = [
+            { label: 'Skills Offered',     value: stats.totalSkillsOffered,       color: '#10b981', icon: '📚' },
+            { label: 'Skills Wanted',       value: stats.totalSkillsWanted,        color: '#06b6d4', icon: '🎯' },
+            { label: 'Requests Received',   value: stats.pendingRequestsReceived,  color: '#f59e0b', icon: '📥' },
+            { label: 'Requests Sent',       value: stats.pendingRequestsSent,      color: '#8b5cf6', icon: '📤' },
+            { label: 'Active Exchanges',    value: stats.activeExchanges,          color: '#4f46e5', icon: '🔄' },
+            { label: 'Active Mentoring',    value: stats.activeMentoringSessions,  color: '#7c3aed', icon: '🎓' },
+            { label: 'Completed',           value: stats.completedSessions,        color: '#374151', icon: '✅' },
+        ];
+
+        document.getElementById('statsContainer').innerHTML = statsData.map(s => `
+            <div class="col-6 col-md-4 col-xl-3">
+                <div class="stat-card" style="border-top-color:${s.color};">
+                    <div style="font-size:1.5rem;margin-bottom:0.25rem;">${s.icon}</div>
+                    <div class="stat-number" style="color:${s.color};">${s.value}</div>
+                    <div class="stat-label">${s.label}</div>
+                </div>
+            </div>
+        `).join('');
+
+        // Show pending badge in sidebar
+        if (stats.pendingRequestsReceived > 0) {
+            const badge = document.getElementById('pendingBadge');
+            badge.textContent = stats.pendingRequestsReceived;
+            badge.classList.remove('d-none');
+        }
+    } catch (err) {
+        document.getElementById('statsContainer').innerHTML =
+            '<div class="col-12"><div class="alert alert-warning">Could not load stats.</div></div>';
+    }
+}
+
+async function loadIncoming() {
+    try {
+        const requests = await api.get('/api/requests/received');
+        const container = document.getElementById('incomingRequests');
+        const pending = requests.filter(r => r.status === 'PENDING');
+
+        if (pending.length === 0) {
+            container.innerHTML = emptyState('📭', 'No pending requests', 'When someone sends you a request, it will appear here.');
+            return;
+        }
+
+        container.innerHTML = pending.slice(0, 5).map(r => `
+            <div class="request-card type-${r.requestType.toLowerCase().replace('_', '-')}">
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        ${getRequestTypeBadge(r.requestType)}
+                        <strong>${r.requester.name}</strong>
+                    </div>
+                    <div class="text-muted small">
+                        Wants to learn: <strong>${r.skillToLearn.name}</strong>
+                        ${r.skillToTeach ? ` · Offers: <strong>${r.skillToTeach.name}</strong>` : ''}
+                    </div>
+                    ${r.message ? `<div class="text-muted small mt-1 fst-italic">"${r.message.substring(0, 80)}${r.message.length > 80 ? '...' : ''}"</div>` : ''}
+                </div>
+                <div class="d-flex gap-2 mt-2 mt-md-0 flex-shrink-0">
+                    <button class="btn-success-ss" onclick="handleRequest(${r.id}, 'accept')">✅ Accept</button>
+                    <button class="btn-danger-ss" onclick="handleRequest(${r.id}, 'reject')">❌ Reject</button>
+                </div>
+            </div>
+        `).join('');
+
+        if (requests.length > 5) {
+            container.innerHTML += `<a href="/requests.html" class="d-block text-center text-primary small mt-2">View all ${requests.length} requests →</a>`;
+        }
+    } catch (err) {
+        document.getElementById('incomingRequests').innerHTML = '<div class="alert alert-warning">Could not load requests.</div>';
+    }
+}
+
+async function loadSent() {
+    try {
+        const requests = await api.get('/api/requests/sent');
+        const container = document.getElementById('sentRequests');
+
+        if (requests.length === 0) {
+            container.innerHTML = emptyState('📤', 'No sent requests', 'Go to Discover to send your first skill exchange request!');
+            return;
+        }
+
+        container.innerHTML = requests.slice(0, 5).map(r => `
+            <div class="request-card status-${r.status.toLowerCase()}">
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        ${getStatusBadge(r.status)}
+                        <strong>To: ${r.receiver.name}</strong>
+                    </div>
+                    <div class="text-muted small">
+                        Learning: <strong>${r.skillToLearn.name}</strong>
+                        ${r.skillToTeach ? ` · Teaching: <strong>${r.skillToTeach.name}</strong>` : ''}
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        if (requests.length > 5) {
+            container.innerHTML += `<a href="/requests.html" class="d-block text-center text-primary small mt-2">View all →</a>`;
+        }
+    } catch (err) {
+        document.getElementById('sentRequests').innerHTML = '<div class="alert alert-warning">Could not load requests.</div>';
+    }
+}
+
+async function loadActive() {
+    try {
+        const sessions = await api.get('/api/requests/active');
+        const container = document.getElementById('activeSessions');
+
+        if (sessions.length === 0) {
+            container.innerHTML = emptyState('🤝', 'No active sessions yet',
+                'Once your exchange requests are accepted, they\'ll appear here.');
+            return;
+        }
+
+        container.innerHTML = `<div class="row g-3">` + sessions.map(s => `
+            <div class="col-md-6">
+                <div class="request-card type-${s.requestType.toLowerCase().replace('_','-')} mb-0">
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            ${getRequestTypeBadge(s.requestType)}
+                        </div>
+                        <div>
+                            <span class="fw-600">${s.requester.id == currentUser.id ? s.receiver.name : s.requester.name}</span>
+                        </div>
+                        <div class="text-muted small">
+                            ${s.requestType === 'EXCHANGE'
+                                ? `${s.skillToLearn.name} ↔ ${s.skillToTeach?.name}`
+                                : `Mentoring: ${s.skillToLearn.name}`}
+                        </div>
+                    </div>
+                    <button class="btn-success-ss" onclick="completeSession(${s.id})">
+                        ✅ Complete
+                    </button>
+                </div>
+            </div>
+        `).join('') + `</div>`;
+    } catch (err) {
+        document.getElementById('activeSessions').innerHTML = '<div class="alert alert-warning">Could not load sessions.</div>';
+    }
+}
+
+async function handleRequest(requestId, action) {
+    try {
+        await api.patch(`/api/requests/${requestId}/${action}`);
+        showToast(`Request ${action}ed successfully!`, action === 'accept' ? 'success' : 'info');
+        await Promise.all([loadStats(), loadIncoming(), loadActive()]);
+    } catch (err) {
+        showToast(err.message || `Could not ${action} request.`, 'error');
+    }
+}
+
+async function completeSession(requestId) {
+    if (!confirm('Mark this session as completed?')) return;
+    try {
+        await api.patch(`/api/requests/${requestId}/complete`);
+        showToast('Session marked as completed! 🎉', 'success');
+        await Promise.all([loadStats(), loadActive()]);
+    } catch (err) {
+        showToast(err.message || 'Could not complete session.', 'error');
+    }
+}
+
+function emptyState(icon, title, subtitle) {
+    return `<div class="empty-state py-4">
+        <div class="empty-icon">${icon}</div>
+        <h6 class="fw-700 mb-1">${title}</h6>
+        <p class="small text-muted mb-0">${subtitle}</p>
+    </div>`;
+}
+
+init();
+</script>
+</body>
+</html>
