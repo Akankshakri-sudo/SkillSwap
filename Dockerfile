@@ -28,4 +28,5 @@ COPY --from=build /app/target/skillswap-1.0.0.jar app.jar
 ENV PORT=8080
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/./urandom", "-jar", "app.jar"]
+# -XX:MaxRAMPercentage=75.0 and -XX:+UseSerialGC optimize JVM memory for 512MB cloud containers
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75.0", "-XX:+UseSerialGC", "-Djava.security.egd=file:/dev/./urandom", "-jar", "app.jar"]
